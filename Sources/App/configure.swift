@@ -1,3 +1,10 @@
+//
+//  websocketRoutes.swift
+//  App
+//
+//  Created by Filip Klembara on 19/04/2022.
+//
+
 import Fluent
 import FluentPostgresDriver
 import Leaf
@@ -5,9 +12,6 @@ import Vapor
 
 // configures your application
 public func configure(_ app: Application) throws {
-    // uncomment to serve files from /Public folder
-    // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
-
     app.databases.use(.postgres(
         hostname: Environment.get("DATABASE_HOST") ?? "localhost",
         port: Environment.get("DATABASE_PORT").flatMap(Int.init(_:)) ?? PostgresConfiguration.ianaPortNumber,
@@ -16,12 +20,14 @@ public func configure(_ app: Application) throws {
         database: Environment.get("DATABASE_NAME") ?? "vapor_database"
     ), as: .psql)
 
-    app.migrations.add(CreateTodo())
+    app.migrations.add(CreateMessage())
+
+    let messageNotificationCenter = MessageNotificationCenter()
+    app.messageNotificationCenter = messageNotificationCenter
+    app.lifecycle.use(messageNotificationCenter)
 
     app.views.use(.leaf)
 
-    
-
-    // register routes
+    try websocketRoutes(app)
     try routes(app)
 }

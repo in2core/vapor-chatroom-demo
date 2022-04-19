@@ -1,12 +1,55 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+    <meta charset="utf-8">
 
-  <title>#(title)</title>
+    <title>#(title)</title>
 </head>
-
-<body>
-  <h1>#(title)</h1>
+<body onload="setupWebSocket()">
+    <h1>#(title)</h1>
+    <div id="room">
+    #for(message in messages):
+        <p><b>#(message.sender)</b>: #(message.content)</p>
+    #endfor
+    </div>
+    <div>
+        <input id="sender" type="text" placeholder="Sender Name">
+        <input id="message" type="text" placeholder="Message" style="min-width: 400px">
+        <button onclick="sendMessage()">Send</button>
+    </div
 </body>
+<script>
+    let webSocket;
+
+    function setupWebSocket() {
+        webSocket = new WebSocket("ws://127.0.0.1:" + location.port + "/webocket");
+        webSocket.onmessage = (event) => {
+            const room = document.getElementById("room");
+            const json = JSON.parse(event.data);
+            const senderText = document.createTextNode(json.sender);
+            const b = document.createElement("b");
+            b.appendChild(senderText);
+            const message = ": " + json.content;
+            const text = document.createTextNode(message);
+            const p = document.createElement("p");
+            p.appendChild(b);
+            p.appendChild(text);
+            room.append(p);
+        };
+    }
+
+    function sendMessage() {
+        const sender = document.getElementById("sender");
+        const message = document.getElementById("message");
+        if (sender.value == "" || message.value == "") {
+            return;
+        }
+        const webSocketMessage = JSON.stringify({
+            sender: sender.value,
+            content: message.value
+        });
+        message.value = "";
+        webSocket.send(webSocketMessage)
+    }
+</script>
 </html>

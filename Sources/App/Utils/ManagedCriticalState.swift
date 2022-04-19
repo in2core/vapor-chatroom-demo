@@ -7,16 +7,17 @@
 
 import Vapor
 
-class ManagedCriticalState<Context> {
+class ManagedCriticalState<State> {
     private let lock = Lock()
-    private var context: Context
-    init(_ context: Context) {
-        self.context = context
+    private var state: State
+
+    init(_ context: State) {
+        self.state = context
     }
 
-    func withCriticalRegion<T>(do block: (inout Context) -> T) -> T {
+    func withCriticalRegion<T>(do block: (inout State) -> T) -> T {
         lock.withLock {
-            block(&context)
+            block(&state)
         }
     }
 }

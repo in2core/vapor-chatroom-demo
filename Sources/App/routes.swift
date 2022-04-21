@@ -1,5 +1,5 @@
 //
-//  websocketRoutes.swift
+//  routes.swift
 //  App
 //
 //  Created by Filip Klembara on 19/04/2022.

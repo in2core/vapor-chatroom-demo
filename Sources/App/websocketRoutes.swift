@@ -23,11 +23,13 @@ func websocketRoutes(_ app: Application) throws {
         }
 
         let id = UUID()
-        app.messageNotificationCenter.subscribe(subscriber: id) { notification in
+        await app.messageNotificationCenter.subscribe(subscriber: id) { notification in
             webSocket.send(notification)
         }
         _ = webSocket.onClose.always { _ in
-            app.messageNotificationCenter.unsubscribe(subscriber: id)
+            Task {
+                await app.messageNotificationCenter.unsubscribe(subscriber: id)
+            }
         }
     }
 }

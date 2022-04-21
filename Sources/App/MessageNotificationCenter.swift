@@ -8,11 +8,11 @@
 import FluentPostgresDriver
 import Vapor
 
-class MessageNotificationCenter {
+actor MessageNotificationCenter {
     private static let channel = "messages"
 
     typealias NotificationHandler = (String) -> Void
-    private let state = ManagedCriticalState([UUID: NotificationHandler]())
+    private var state: [UUID: NotificationHandler] = [:]
 }
 
 extension MessageNotificationCenter {
@@ -24,25 +24,30 @@ extension MessageNotificationCenter {
 
 // MARK: - Subscriptions
 extension MessageNotificationCenter {
-    func subscribe(subscriber: UUID, callback: @escaping NotificationHandler) {
-        state.withCriticalRegion { $0[subscriber] = callback }
+    func subscribe(subscriber: UUID, callback: @escaping NotificationHandler) async {
+        state[subscriber] = callback
     }
 
-    func unsubscribe(subscriber: UUID) {
-        state.withCriticalRegion { $0[subscriber] = nil }
+    func unsubscribe(subscriber: UUID) async {
+        state[subscriber] = nil
+    }
+
+    func notifyAll(_ notification: PostgresMessage.NotificationResponse) async {
+        state.forEach {
+            $0.value(notification.payload)
+        }
     }
 }
 
 // MARK: - Lifecycle
 extension MessageNotificationCenter: LifecycleHandler {
-    func startListening(on database: any Database) throws {
+    nonisolated func startListening(on database: any Database) throws {
         let database = database as! PostgresDatabase
         try database.withConnection { connection -> EventLoopFuture<Void> in
             connection.addListener(channel: Self.channel) { [weak self] context, notification in
-                self?.state.withCriticalRegion { subscribers in
-                    subscribers.forEach {
-                        $0.value(notification.payload)
-                    }
+                guard let self = self else { return }
+                Task {
+                    await self.notifyAll(notification)
                 }
             }
             return connection.simpleQuery("LISTEN \"\(Self.channel)\"") { _ in }
@@ -50,7 +55,7 @@ extension MessageNotificationCenter: LifecycleHandler {
         .wait()
     }
 
-    func didBoot(_ application: Application) throws {
+    nonisolated func didBoot(_ application: Application) throws {
         try startListening(on: application.db)
     }
 }

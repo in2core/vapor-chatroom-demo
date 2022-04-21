@@ -8,7 +8,7 @@
 import Vapor
 
 func websocketRoutes(_ app: Application) throws {
-    app.webSocket("webocket") { request, webSocket in
+    app.webSocket("websocket") { request, webSocket in
         webSocket.onText { webSocket, text in
             do {
                 let incomingMessage = try JSONDecoder().decode(ChatRoomMessage.self, from: Data(text.utf8))

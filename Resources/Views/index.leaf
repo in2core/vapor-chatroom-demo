@@ -22,7 +22,7 @@
     let webSocket;
 
     function setupWebSocket() {
-        webSocket = new WebSocket("ws://127.0.0.1:" + location.port + "/webocket");
+        webSocket = new WebSocket("ws://127.0.0.1:" + location.port + "/websocket");
         webSocket.onmessage = (event) => {
             const room = document.getElementById("room");
             const json = JSON.parse(event.data);

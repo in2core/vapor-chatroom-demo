@@ -31,6 +31,5 @@ public func configure(_ app: Application) throws {
 
     app.views.use(.leaf)
 
-    try websocketRoutes(app)
     try routes(app)
 }

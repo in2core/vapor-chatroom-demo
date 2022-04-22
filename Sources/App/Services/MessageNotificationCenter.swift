@@ -59,3 +59,19 @@ extension MessageNotificationCenter: LifecycleHandler {
         try startListening(on: application.db)
     }
 }
+
+// MARK: - Storage
+private struct MessageNotificationCenterKey: StorageKey {
+    typealias Value = MessageNotificationCenter
+}
+
+extension Application {
+    var messageNotificationCenter: MessageNotificationCenter {
+        get {
+            storage[MessageNotificationCenterKey.self]!
+        }
+        set {
+            storage[MessageNotificationCenterKey.self] = newValue
+        }
+    }
+}

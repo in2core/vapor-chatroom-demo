@@ -25,10 +25,10 @@ final class Message: Model {
 
     init() { }
 
-    init(id: UUID? = nil, sender: String, content: String, createdAt creationDate: Date) {
+    init(id: UUID? = nil, sender: String, content: String, createdAt: Date = Date()) {
         self.id = id
         self.sender = sender
         self.content = content
-        self.createdAt = creationDate
+        self.createdAt = createdAt
     }
 }

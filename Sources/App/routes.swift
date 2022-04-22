@@ -13,14 +13,12 @@ func routes(_ app: Application) throws {
         let messages = try await Message.query(on: app.db)
             .sort(\.$createdAt)
             .all()
-            .map {
-                ChatRoomMessage(sender: $0.sender, content: $0.content)
-            }
 
         struct ViewContext: Encodable {
             let title: String = "Chat Room Demo"
-            let messages: [ChatRoomMessage]
+            let messages: [Message]
         }
+
         let ctx = ViewContext(messages: messages)
         return try await req.view.render("index", ctx)
     }
@@ -28,9 +26,14 @@ func routes(_ app: Application) throws {
     app.webSocket("websocket") { request, webSocket in
         webSocket.onText { webSocket, text in
             do {
-                let incomingMessage = try JSONDecoder().decode(ChatRoomMessage.self, from: Data(text.utf8))
+                struct IncomingMessage: Decodable {
+                    let sender: String
+                    let content: String
+                }
 
-                let message = Message(sender: incomingMessage.sender, content: incomingMessage.content, createdAt: Date())
+                let incomingMessage = try JSONDecoder().decode(IncomingMessage.self, from: Data(text.utf8))
+
+                let message = Message(sender: incomingMessage.sender, content: incomingMessage.content)
                 try await message.save(on: app.db)
 
                 try await app.messageNotificationCenter.notify(on: app.db, message: text)

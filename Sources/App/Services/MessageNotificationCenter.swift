@@ -16,7 +16,7 @@ actor MessageNotificationCenter {
 }
 
 extension MessageNotificationCenter {
-    func notify(on database: any Database, message: String) async throws {
+    func notify(_ message: String, on database: any Database) async throws {
         let db = database as! PostgresDatabase
         try await db.simpleQuery("NOTIFY \"\(Self.channel)\", '\(message)'") { _ in }.get()
     }
@@ -24,15 +24,15 @@ extension MessageNotificationCenter {
 
 // MARK: - Subscriptions
 extension MessageNotificationCenter {
-    func subscribe(subscriber: UUID, callback: @escaping NotificationHandler) async {
+    func subscribe(_ subscriber: UUID, callback: @escaping NotificationHandler) async {
         state[subscriber] = callback
     }
 
-    func unsubscribe(subscriber: UUID) async {
+    func unsubscribe(_ subscriber: UUID) async {
         state[subscriber] = nil
     }
 
-    func notifyAll(_ notification: PostgresMessage.NotificationResponse) async {
+    private func notifyAll(_ notification: PostgresMessage.NotificationResponse) async {
         state.forEach {
             $0.value(notification.payload)
         }
@@ -41,7 +41,7 @@ extension MessageNotificationCenter {
 
 // MARK: - Lifecycle
 extension MessageNotificationCenter: LifecycleHandler {
-    nonisolated func startListening(on database: any Database) throws {
+    nonisolated private func startListening(on database: any Database) throws {
         let database = database as! PostgresDatabase
         try database.withConnection { connection -> EventLoopFuture<Void> in
             connection.addListener(channel: Self.channel) { [weak self] context, notification in

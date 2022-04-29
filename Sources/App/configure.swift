@@ -21,9 +21,7 @@ public func configure(_ app: Application) throws {
     ), as: .psql)
 
     app.migrations.add(CreateMessage())
-    app.autoMigrate().whenFailure { error in
-        fatalError(error.localizedDescription)
-    }
+    try app.autoMigrate().wait()
 
     let messageNotificationCenter = MessageNotificationCenter()
     app.messageNotificationCenter = messageNotificationCenter

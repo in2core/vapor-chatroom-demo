@@ -23,8 +23,8 @@ struct ChatController: RouteCollection {
             let messages: [Message]
         }
 
-        let ctx = ViewContext(messages: messages)
-        return try await req.view.render("index", ctx)
+        let viewContext = ViewContext(messages: messages)
+        return try await req.view.render("index", viewContext)
     }
 
     private func webSocket(_ req: Request, _ webSocket: WebSocket) async {

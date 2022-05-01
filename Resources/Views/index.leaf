@@ -16,7 +16,7 @@
         <input id="sender" type="text" placeholder="Sender Name">
         <input id="message" type="text" placeholder="Message" style="min-width: 400px">
         <button onclick="sendMessage()">Send</button>
-    </div
+    </div>
 </body>
 <script>
     let webSocket;

@@ -21,6 +21,7 @@ public func configure(_ app: Application) throws {
     ), as: .psql)
 
     app.migrations.add(CreateMessage())
+    app.migrations.add(SeedMessages())
     try app.autoMigrate().wait()
 
     let messageNotificationCenter = MessageNotificationCenter()

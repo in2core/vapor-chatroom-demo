@@ -24,15 +24,15 @@ extension MessageNotificationCenter {
 
 // MARK: - Subscriptions
 extension MessageNotificationCenter {
-    func subscribe(_ subscriber: UUID, callback: @escaping NotificationHandler) async {
+    func subscribe(_ subscriber: UUID, callback: @escaping NotificationHandler) {
         state[subscriber] = callback
     }
 
-    func unsubscribe(_ subscriber: UUID) async {
+    func unsubscribe(_ subscriber: UUID) {
         state[subscriber] = nil
     }
 
-    private func notifyAll(_ notification: PostgresMessage.NotificationResponse) async {
+    private func notifyAll(_ notification: PostgresMessage.NotificationResponse) {
         state.forEach {
             $0.value(notification.payload)
         }

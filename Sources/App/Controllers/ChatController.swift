@@ -30,17 +30,28 @@ struct ChatController: RouteCollection {
     private func webSocket(_ req: Request, _ webSocket: WebSocket) async {
         webSocket.onText { webSocket, text in
             do {
-                struct IncomingMessage: Decodable {
-                    let sender: String
-                    let content: String
+                enum IncomingMessage: Decodable {
+                    case like(sender: String)
+                    case text(sender: String, content: String)
                 }
 
                 let incomingMessage = try JSONDecoder().decode(IncomingMessage.self, from: Data(text.utf8))
 
-                let message = Message(sender: incomingMessage.sender, content: incomingMessage.content)
+                let message: Message
+
+                switch incomingMessage {
+                case let .like(sender):
+                    message = Message(sender: sender, content: "👍")
+                case let .text(sender: sender, content: content):
+                    message = Message(sender: sender, content: content)
+                }
+
                 try await message.save(on: req.db)
 
-                try await req.application.messageNotificationCenter.notify(text, on: req.db)
+                guard let message = try String(data: JSONEncoder().encode(message), encoding: .utf8) else {
+                    throw Abort(.internalServerError)
+                }
+                try await req.application.messageNotificationCenter.notify(message, on: req.db)
             } catch {
                 try? await webSocket.close()
             }

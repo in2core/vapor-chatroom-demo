@@ -15,7 +15,8 @@
     <div>
         <input id="sender" type="text" placeholder="Sender Name">
         <input id="message" type="text" placeholder="Message" style="min-width: 400px">
-        <button onclick="sendMessage()">Send</button>
+        <button onclick="sendText()">Send</button>
+        <button onclick="sendLike()">👍</button>
     </div>
 </body>
 <script>
@@ -38,18 +39,34 @@
         };
     }
 
-    function sendMessage() {
-        const sender = document.getElementById("sender");
-        const message = document.getElementById("message");
-        if (sender.value == "" || message.value == "") {
-            return;
-        }
-        const webSocketMessage = JSON.stringify({
-            sender: sender.value,
-            content: message.value
+    function sender() {
+        const sender = document.getElementById("sender").value;
+        return sender == "" ? "No Sender" : sender;
+    }
+
+    function sendLike() {
+        sendMessage({
+            like: {
+                sender: sender()
+            }
         });
+    }
+
+    function sendText() {
+        const message = document.getElementById("message");
+        if (message.value != "") {
+            sendMessage({
+                text: {
+                    sender: sender(),
+                    content: message.value
+                }
+            });
+        }
         message.value = "";
-        webSocket.send(webSocketMessage)
+    }
+
+    function sendMessage(message) {
+        webSocket.send(JSON.stringify(message));
     }
 </script>
 </html>

@@ -28,6 +28,16 @@ struct ChatController: RouteCollection {
     }
 
     private func webSocket(_ req: Request, _ webSocket: WebSocket) async {
+        let id = UUID()
+        await req.application.messageNotificationCenter.subscribe(id) { notification in
+            webSocket.send(notification)
+        }
+        _ = webSocket.onClose.always { _ in
+            Task {
+                await req.application.messageNotificationCenter.unsubscribe(id)
+            }
+        }
+
         webSocket.onText { webSocket, text in
             do {
                 enum IncomingMessage: Decodable {
@@ -51,19 +61,9 @@ struct ChatController: RouteCollection {
                 guard let message = try String(data: JSONEncoder().encode(message), encoding: .utf8) else {
                     throw Abort(.internalServerError)
                 }
-                try await req.application.messageNotificationCenter.notify(message, on: req.db)
+                try await req.application.messageNotificationCenter.sendNotification(message, on: req.db)
             } catch {
                 try? await webSocket.close()
-            }
-        }
-
-        let id = UUID()
-        await req.application.messageNotificationCenter.subscribe(id) { notification in
-            webSocket.send(notification)
-        }
-        _ = webSocket.onClose.always { _ in
-            Task {
-                await req.application.messageNotificationCenter.unsubscribe(id)
             }
         }
     }

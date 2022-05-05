@@ -9,17 +9,8 @@ import FluentPostgresDriver
 import Vapor
 
 actor MessageNotificationCenter {
-    private static let channel = "messages"
-
     typealias NotificationHandler = (String) -> Void
     private var state: [UUID: NotificationHandler] = [:]
-}
-
-extension MessageNotificationCenter {
-    func notify(_ message: String, on database: any Database) async throws {
-        let db = database as! PostgresDatabase
-        try await db.simpleQuery("NOTIFY \"\(Self.channel)\", '\(message)'") { _ in }.get()
-    }
 }
 
 // MARK: - Subscriptions
@@ -32,22 +23,29 @@ extension MessageNotificationCenter {
         state[subscriber] = nil
     }
 
-    private func notifyAll(_ notification: PostgresMessage.NotificationResponse) {
+    private func notifySubscribers(_ notification: String) {
         state.forEach {
-            $0.value(notification.payload)
+            $0.value(notification)
         }
+    }
+
+    func sendNotification(_ message: String, on database: any Database) async throws {
+        let db = database as! PostgresDatabase
+        try await db.simpleQuery("NOTIFY \"\(Self.channel)\", '\(message)'") { _ in }.get()
     }
 }
 
 // MARK: - Lifecycle
 extension MessageNotificationCenter: LifecycleHandler {
+    private static let channel = "messages"
+
     nonisolated private func startListening(on database: any Database) throws {
         let database = database as! PostgresDatabase
         try database.withConnection { connection -> EventLoopFuture<Void> in
             connection.addListener(channel: Self.channel) { [weak self] context, notification in
                 guard let self = self else { return }
                 Task {
-                    await self.notifyAll(notification)
+                    await self.notifySubscribers(notification.payload)
                 }
             }
             return connection.simpleQuery("LISTEN \"\(Self.channel)\"") { _ in }
